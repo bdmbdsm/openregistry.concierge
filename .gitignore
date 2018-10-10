@@ -108,3 +108,4 @@ bin/
 
 # Pytest
 .pytest_cache/
+lots_mapping
