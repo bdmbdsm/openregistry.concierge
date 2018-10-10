@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-import argparse
 import logging
 import logging.config
-import time
-import yaml
 from copy import deepcopy
 from retrying import retry
 from datetime import datetime, timedelta
@@ -123,7 +120,10 @@ class ProcessingLoki(object):
         if not lot_available:
             logger.info("Skipping Lot {}".format(lot['id']), extra={'MESSAGE_ID': 'skip_lot'})
             return
-        logger.info("Processing Lot {} in status {}".format(lot['id'], lot['status']), extra={'MESSAGE_ID': 'process_loki_lot'})
+        logger.info(
+            "Processing Lot {} in status {}".format(lot['id'], lot['status']),
+            extra={'MESSAGE_ID': 'process_loki_lot'}
+        )
         if lot['status'] in ['verification']:
             try:
                 assets_available = self.check_assets(lot)
@@ -263,7 +263,7 @@ class ProcessingLoki(object):
             if re_obj and 'accelerator' in re_obj.groupdict():
                 calc_date = calculate_business_date(
                     start=now_date,
-                    delta= timedelta(days=20)/int(re_obj.groupdict()['accelerator']),
+                    delta=timedelta(days=20)/int(re_obj.groupdict()['accelerator']),
                     context=None,
                     working_days=False
                 )
@@ -286,7 +286,9 @@ class ProcessingLoki(object):
             return auction, auction_from_lot['id']
         except EXCEPTIONS as e:
             message = 'Server error: {}'.format(e.status_code) if e.status_code >= 500 else e.message
-            logger.error("Failed to create auction from Lot {} ({})".format(lot['id'], message), extra={'MESSAGE_ID': 'failed_to_create_auction'})
+            logger.error(
+                "Failed to create auction from Lot {} ({})".format(lot['id'], message),
+                extra={'MESSAGE_ID': 'failed_to_create_auction'})
             return False
 
     def _add_assets_to_lot(self, lot):
@@ -306,7 +308,10 @@ class ProcessingLoki(object):
                         self.db,
                         logger,
                         self.errors_doc, lot,
-                        'patching assets to {}'.format(get_next_status(NEXT_STATUS_CHANGE, 'asset', lot['status'], 'pre')))
+                        'patching assets to {}'.format(
+                            get_next_status(NEXT_STATUS_CHANGE, 'asset', lot['status'], 'pre')
+                        )
+                    )
             return False
         else:
             result, _ = self.patch_assets(
@@ -315,7 +320,12 @@ class ProcessingLoki(object):
                 lot['id']
             )
             if result is False:
-                log_assets_message(logger, 'info', "Assets {assets} will be repatched to 'pending'", lot['relatedProcesses'])
+                log_assets_message(
+                    logger,
+                    'info',
+                    "Assets {assets} will be repatched to 'pending'",
+                    lot['relatedProcesses']
+                )
                 result, _ = self.patch_assets(lot, get_next_status(NEXT_STATUS_CHANGE, 'asset', lot['status'], 'fail'))
                 if result is False:
                     log_broken_lot(self.db, logger, self.errors_doc, lot, 'patching assets to active')
